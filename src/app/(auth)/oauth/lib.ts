@@ -1,9 +1,14 @@
 import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
 
 const redirect_uri = `${process.env.NEXT_PUBLIC_URL}/oauth/callback`
 
-export async function authorize({ from }: { from: string }) {
+export async function authorize({
+  from,
+  callbackType,
+}: {
+  from: string
+  callbackType: string
+}) {
   const state = Math.random().toString(36).substring(2)
 
   const url = new URL('https://slack.com/oauth/v2/authorize')
@@ -16,6 +21,7 @@ export async function authorize({ from }: { from: string }) {
     'oauth_state',
     JSON.stringify({
       from,
+      callbackType,
       provider: 'slack',
       redirect_uri,
       state,
@@ -31,12 +37,10 @@ export async function authorize({ from }: { from: string }) {
 }
 
 export async function callback(param: { code: string; state: string }) {
-  await new Promise((resolve) => setTimeout(resolve, 3000))
-
   const stateCookie = cookies().get('oauth_state')?.value
   if (!stateCookie) throw new Error('Missing state cookie')
 
-  const { from, state } = JSON.parse(stateCookie)
+  const { from, callbackType, state } = JSON.parse(stateCookie)
 
   if (state !== param.state) throw new Error('Invalid state')
 
@@ -59,6 +63,16 @@ export async function callback(param: { code: string; state: string }) {
   if (!result.ok)
     throw new Error('Failed to fetch access token: ' + result.error)
 
-  cookies().delete('oauth_state')
-  redirect(from ?? '/')
+  cookies().set('oauth_token', result.access_token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: result.expires_in,
+  })
+
+  return { from, callbackType, result }
+
+  // console.log(result)
+
+  // cookies().delete('oauth_state')
+  // redirect(from ?? '/')
 }
