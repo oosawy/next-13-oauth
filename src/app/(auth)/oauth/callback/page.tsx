@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { callback } from '../lib'
-import Script from 'next/script'
+import { PopupCallback } from '../lib/client'
 
 export default async function Page({
   searchParams,
@@ -22,14 +22,6 @@ export default async function Page({
   }
 
   if (callbackType === 'popup') {
-    return (
-      <Script>{`
-        try {
-          window.opener.postMessage({ type: "popup-callback" });
-        } catch (e) {
-          location.href = ${JSON.stringify(from)};
-        }
-      `}</Script>
-    )
+    return <PopupCallback from={from} />
   }
 }

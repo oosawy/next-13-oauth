@@ -70,9 +70,4 @@ export async function callback(param: { code: string; state: string }) {
   })
 
   return { from, callbackType, result }
-
-  // console.log(result)
-
-  // cookies().delete('oauth_state')
-  // redirect(from ?? '/')
 }
